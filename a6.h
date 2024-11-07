@@ -3,13 +3,18 @@
 #include <string.h>
 #include <stdbool.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 typedef struct TreeNode {
-    char type;
-    int width, height;
-    int x, y;
-    int label; 
-    struct TreeNode *left, *right;
+    int checker;
+    int identity; 
+    int width;
+    int height;
+    int x, y; 
+    char direction; 
+    struct TreeNode *left;
+    struct TreeNode *right;
 } TreeNode;
 
 TreeNode* buildTree(FILE *inputFile);
