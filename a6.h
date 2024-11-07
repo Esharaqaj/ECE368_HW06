@@ -5,30 +5,29 @@
 #include <math.h>
 
 // Struct Definitions
-typedef struct TreeNode {
-    char nodeType;   // ASCII representation for V, H, etc.
-    int id;
+typedef struct Node {
+    char node_name;
+    int int_name;
     int width;
     int height;
-    int posX;
-    int posY;
-    struct TreeNode *left;
-    struct TreeNode *right;
-} TreeNode;
+    int org_x;
+    int org_y;
+    struct Node *left;
+    struct Node *right;
+} Node;
 
-typedef struct NodeStack {
-    struct TreeNode *node;
-    struct NodeStack *next;
-} NodeStack;
+typedef struct Stack {
+    struct Node *node;
+    struct Stack *next;
+} Stack;
 
-// Function Prototypes
-NodeStack* createTree(const char *filename);
-void releaseStack(NodeStack *stackHead);
-void outputNodeData(TreeNode *root, FILE *outputFile, FILE *dimensionsFile, FILE *packFile);
-void calculateCoordinates(TreeNode *root);
-NodeStack* createTree(const char *filename);
-TreeNode* createSubtree(NodeStack **stackHead, const char *buffer);
-void releaseTree(TreeNode *root);
-void pushToStack(NodeStack **stackHead, TreeNode *newNode);
-TreeNode* createNode(const char *buffer);
-TreeNode* popFromStack(NodeStack **stackHead);
+// Function Prototypes with Renamed Functions
+Stack* constructTree(const char *filename);
+void disposeStack(Stack *stack_head);
+void displayNode(Node *root, FILE *outFile, FILE *dimFile, FILE *packFile);
+void calculateBoxCoords(Node *root);
+Node* createNodeElement(const char *buffer);
+Node* removeFromStack(Stack **stack_head);
+void pushToStack(Stack **stack_head, Node *new_node);
+void disposeTree(Node *root);
+Node* buildSubtree(Stack **stack_head, const char *buffer);

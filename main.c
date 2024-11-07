@@ -5,143 +5,148 @@
 #include <math.h>
 #include "a6.h"
 
-TreeNode* popFromStack(NodeStack **stackHead) {
-    if (*stackHead == NULL) {
+Node* removeFromStack(Stack **stack_head) {
+    if (*stack_head == NULL) {
         return NULL;
     }
-    NodeStack *temp = *stackHead;
-    *stackHead = (*stackHead)->next;
-    TreeNode *poppedNode = temp->node;
+    Stack *temp = *stack_head;
+    *stack_head = (*stack_head)->next;
+    Node *popped_node = temp->node;
     free(temp);
-    return poppedNode;
+    return popped_node;
 }
 
-TreeNode* createNode(const char *buffer) {
+Node* createNodeElement(const char *buffer) {
     int id, width, height;
     sscanf(buffer, "%d(%d,%d)", &id, &width, &height);
-    TreeNode *newNode = malloc(sizeof(TreeNode));
-    newNode->id = id;
-    newNode->nodeType = '\0';
-    newNode->width = width;
-    newNode->height = height;
-    newNode->posX = 0;
-    newNode->posY = 0;
-    newNode->left = NULL;
-    newNode->right = NULL;
-    return newNode;
+    Node *new_node = malloc(sizeof(Node));
+    new_node->int_name = id;
+    new_node->node_name = '\0';
+    new_node->width = width;
+    new_node->height = height;
+    new_node->org_x = 0;
+    new_node->org_y = 0;
+    new_node->left = NULL;
+    new_node->right = NULL;
+    return new_node;
 }
 
-void pushToStack(NodeStack **stackHead, TreeNode *newNode) {
-    NodeStack *newStackNode = malloc(sizeof(NodeStack));
-    if (newStackNode == NULL) {
-        perror("Failed to allocate memory");
+void pushToStack(Stack **stack_head, Node *new_node) {
+    Stack *new_stack_node = malloc(sizeof(Stack));
+    if (new_stack_node == NULL) {
+        perror("Memory allocation failed");
         exit(EXIT_FAILURE);
     }
-    newStackNode->node = newNode;
-    newStackNode->next = *stackHead;
-    *stackHead = newStackNode;
+    new_stack_node->node = new_node;
+    new_stack_node->next = *stack_head;
+    *stack_head = new_stack_node;
 }
 
-void releaseTree(TreeNode *root) {
+void disposeTree(Node *root) {
     if (root == NULL) return;
-    releaseTree(root->left);
-    releaseTree(root->right);
+    disposeTree(root->left);
+    disposeTree(root->right);
     free(root);
 }
 
-void releaseStack(NodeStack *stackHead) {
-    while (stackHead != NULL) {
-        NodeStack *nextNode = stackHead->next;
-        if (stackHead->node != NULL) {
-            releaseTree(stackHead->node);
+void disposeStack(Stack *stack_head) {
+    while (stack_head != NULL) {
+        Stack *next_node = stack_head->next;
+        if (stack_head->node != NULL) {
+            disposeTree(stack_head->node);
         }
-        free(stackHead);
-        stackHead = nextNode;
+        free(stack_head);
+        stack_head = next_node;
     }
 }
 
-TreeNode* createSubtree(NodeStack **stackHead, const char *buffer) {
-    char nodeType;
-    sscanf(buffer, "%c", &nodeType);
+Node* buildSubtree(Stack **stack_head, const char *buffer) {
+    char node_type;
+    sscanf(buffer, "%c", &node_type);
 
-    TreeNode *newNode = malloc(sizeof(TreeNode));
-    newNode->nodeType = nodeType;
-    newNode->id = 0;
+    Node *new_node = malloc(sizeof(Node));
+    new_node->node_name = node_type;
+    new_node->int_name = 0;
 
-    newNode->right = popFromStack(stackHead);
-    newNode->left = popFromStack(stackHead);
+    new_node->right = removeFromStack(stack_head);
+    new_node->left = removeFromStack(stack_head);
 
-    if (nodeType == 'V') {
-        newNode->height = (newNode->left->height > newNode->right->height) ? newNode->left->height : newNode->right->height;
-        newNode->width = newNode->left->width + newNode->right->width;
-    } else if (nodeType == 'H') {
-        newNode->width = (newNode->left->width > newNode->right->width) ? newNode->left->width : newNode->right->width;
-        newNode->height = newNode->left->height + newNode->right->height;
+    if (node_type == 'V') {
+        new_node->height = (new_node->left->height > new_node->right->height) ? new_node->left->height : new_node->right->height;
+        new_node->width = new_node->left->width + new_node->right->width;
+    } else if (node_type == 'H') {
+        new_node->width = (new_node->left->width > new_node->right->width) ? new_node->left->width : new_node->right->width;
+        new_node->height = new_node->left->height + new_node->right->height;
     } else {
-        newNode->width = 0;
-        newNode->height = 0;
+        new_node->width = 0;
+        new_node->height = 0;
     }
-    newNode->posX = 0;
-    newNode->posY = 0;
-    return newNode;
+
+    new_node->org_x = 0;
+    new_node->org_y = 0;
+    return new_node;
 }
 
-NodeStack* createTree(const char *filename) {
+Stack* constructTree(const char *filename) {
     FILE *file = fopen(filename, "r");
     if (file == NULL) {
         perror("Error opening file");
         return NULL;
     }
 
-    NodeStack *stackHead = NULL;
+    Stack *stack_head = NULL;
     char buffer[20];
     while (fgets(buffer, sizeof(buffer), file)) {
-        TreeNode *newNode;
+        Node *new_node;
         if (buffer[0] == 'V' || buffer[0] == 'H') {
-            newNode = createSubtree(&stackHead, buffer);
+            new_node = buildSubtree(&stack_head, buffer);
         } else {
-            newNode = createNode(buffer);
+            new_node = createNodeElement(buffer);
         }
-        pushToStack(&stackHead, newNode);
+        pushToStack(&stack_head, new_node);
     }
     fclose(file);
-    return stackHead;
+    return stack_head;
 }
 
-void calculateCoordinates(TreeNode *root) {
+void calculateBoxCoords(Node *root) {
     if (root->left == NULL && root->right == NULL) {
         return;
     }
 
-    if (root->nodeType == 'H') {
-        root->left->posY = root->posY + root->right->height;
-        root->right->posX = root->posX;
-    } else if (root->nodeType == 'V') {
-        root->left->posX = root->posX;
-        root->right->posX = root->posX + root->left->width;
+    if (root->node_name == 'H') {
+        root->left->org_y = root->org_y + root->right->height;
+        root->left->org_x = root->org_x;
+        root->right->org_x = root->org_x;
+        root->right->org_y = root->org_y;
+    } else if (root->node_name == 'V') {
+        root->left->org_x = root->org_x;
+        root->left->org_y = root->org_y;
+        root->right->org_x = root->org_x + root->left->width;
+        root->right->org_y = root->org_y;
     }
 
-    calculateCoordinates(root->left);
-    calculateCoordinates(root->right);
+    calculateBoxCoords(root->left);
+    calculateBoxCoords(root->right);
 }
 
-void outputNodeData(TreeNode *root, FILE *outputFile, FILE *dimensionsFile, FILE *packFile) {
+void displayNode(Node *root, FILE *outFile, FILE *dimFile, FILE *packFile) {
     if (root == NULL) return;
 
     if (root->left == NULL && root->right == NULL) {
-        fprintf(outputFile, "%d(%d,%d)\n", root->id, root->width, root->height);
+        fprintf(outFile, "%d(%d,%d)\n", root->int_name, root->width, root->height);
     } else {
-        fprintf(outputFile, "%c\n", root->nodeType);
+        fprintf(outFile, "%c\n", root->node_name);
     }
 
-    outputNodeData(root->left, outputFile, dimensionsFile, packFile);
-    outputNodeData(root->right, outputFile, dimensionsFile, packFile);
+    displayNode(root->left, outFile, dimFile, packFile);
+    displayNode(root->right, outFile, dimFile, packFile);
 
-    if ((root->nodeType == 'V' || root->nodeType == 'H') && root->id == 0) {
-        fprintf(dimensionsFile, "%c(%d,%d)\n", root->nodeType, root->width, root->height);
+    if ((root->node_name == 'V' || root->node_name == 'H') && root->int_name == 0) {
+        fprintf(dimFile, "%c(%d,%d)\n", root->node_name, root->width, root->height);
     } else {
-        fprintf(dimensionsFile, "%d(%d,%d)\n", root->id, root->width, root->height);
-        fprintf(packFile, "%d((%d,%d)(%d,%d))\n", root->id, root->width, root->height, root->posX, root->posY);
+        fprintf(dimFile, "%d(%d,%d)\n", root->int_name, root->width, root->height);
+        fprintf(packFile, "%d((%d,%d)(%d,%d))\n", root->int_name, root->width, root->height, root->org_x, root->org_y);
     }
 }
 
@@ -151,16 +156,16 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    NodeStack *treeStack = createTree(argv[1]);
+    Stack *treeStack = constructTree(argv[1]);
     if (treeStack == NULL) {
         fprintf(stderr, "Failed to build tree from input file.\n");
         return EXIT_FAILURE;
     }
 
-    TreeNode *root = popFromStack(&treeStack);
-    releaseStack(treeStack);
+    Node *root = removeFromStack(&treeStack);
+    disposeStack(treeStack);
 
-    calculateCoordinates(root);
+    calculateBoxCoords(root);
 
     FILE *outputFile = fopen(argv[2], "w");
     FILE *dimensionsFile = fopen(argv[3], "w");
@@ -168,19 +173,19 @@ int main(int argc, char *argv[]) {
 
     if (!outputFile || !dimensionsFile || !packFile) {
         perror("Error opening output file");
-        releaseTree(root);
+        disposeTree(root);
         if (outputFile) fclose(outputFile);
         if (dimensionsFile) fclose(dimensionsFile);
         if (packFile) fclose(packFile);
         return EXIT_FAILURE;
     }
 
-    outputNodeData(root, outputFile, dimensionsFile, packFile);
+    displayNode(root, outputFile, dimensionsFile, packFile);
 
     fclose(outputFile);
     fclose(dimensionsFile);
     fclose(packFile);
-    releaseTree(root);
+    disposeTree(root);
 
     return EXIT_SUCCESS;
 }
