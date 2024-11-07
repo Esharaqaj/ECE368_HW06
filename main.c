@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
 
 
 TreeNode *popStack(StackNode **stack_head) {
-    if (*stack_head == NULL) {
+    if (*stack_head == NULL || (*stack_head)->next == NULL) {
         return NULL;
     }
 
@@ -61,27 +61,16 @@ TreeNode *popStack(StackNode **stack_head) {
     return removed_node;
 }
 
-TreeNode *createNode(char *buffer) {
-    int identifier = 0, width = 0, height = 0;
-    sscanf(buffer, "%d(%d,%d)", &identifier, &width, &height);
-
-    TreeNode *new_tree_node = malloc(sizeof(TreeNode));
-    new_tree_node->id = identifier;
-    new_tree_node->label = '\0';
-    new_tree_node->width = width;
-    new_tree_node->height = height;
-    new_tree_node->x_coord = 0;
-    new_tree_node->y_coord = 0;
-    new_tree_node->left_child = NULL;
-    new_tree_node->right_child = NULL;
-
-    return new_tree_node;
-}
-
 void pushToStack(StackNode **stack_head, TreeNode *new_tree_node) {
+    if (new_tree_node == NULL) {
+        fprintf(stderr, "Error: Attempting to push a NULL tree node onto the stack.\n");
+        return;
+    }
+
     StackNode *new_stack_node = malloc(sizeof(StackNode));
     if (new_stack_node == NULL) {
-        return;
+        fprintf(stderr, "Error: Memory allocation failed.\n");
+        exit(EXIT_FAILURE); // Exit if malloc fails to avoid undefined behavior.
     }
 
     new_stack_node->tree = new_tree_node;
@@ -98,56 +87,34 @@ void freeTree(TreeNode *root) {
 }
 
 void freeStack(StackNode *stack_head) {
-    StackNode *current = stack_head->next;
-    while (current != NULL) {
-        StackNode *next_node = current->next;
-        if (current->tree != NULL) {
-            freeTree(current->tree);
+    while (stack_head != NULL) {
+        StackNode *next_node = stack_head->next;
+        if (stack_head->tree != NULL) {
+            freeTree(stack_head->tree);
         }
-        free(current);
-        current = next_node;
+        free(stack_head);
+        stack_head = next_node;
     }
 }
 
-TreeNode *assembleNode(StackNode **stack_head, char *buffer) {
-    char label;
-    sscanf(buffer, "%c", &label);
-
-    TreeNode *new_internal_node = malloc(sizeof(TreeNode));
-    new_internal_node->label = label;
-    new_internal_node->id = 0;
-    new_internal_node->right_child = popStack(stack_head);
-    new_internal_node->left_child = popStack(stack_head);
-
-    if (new_internal_node->label == 'V') {
-        new_internal_node->height = (new_internal_node->left_child->height > new_internal_node->right_child->height) ?
-                                    new_internal_node->left_child->height : new_internal_node->right_child->height;
-        new_internal_node->width = new_internal_node->left_child->width + new_internal_node->right_child->width;
-    } else if (new_internal_node->label == 'H') {
-        new_internal_node->width = (new_internal_node->left_child->width > new_internal_node->right_child->width) ?
-                                   new_internal_node->left_child->width : new_internal_node->right_child->width;
-        new_internal_node->height = new_internal_node->left_child->height + new_internal_node->right_child->height;
-    } else {
-        new_internal_node->width = 0;
-        new_internal_node->height = 0;
-    }
-
-    new_internal_node->x_coord = 0;
-    new_internal_node->y_coord = 0;
-    return new_internal_node;
-}
-
+// Added checks in createTree function
 StackNode *createTree(char *filename) {
     FILE *file = fopen(filename, "r");
     if (file == NULL) {
+        fprintf(stderr, "Error: Unable to open file %s.\n", filename);
         return NULL;
     }
 
     StackNode *stack_head = malloc(sizeof(StackNode));
+    if (stack_head == NULL) {
+        fprintf(stderr, "Error: Memory allocation failed.\n");
+        fclose(file);
+        return NULL;
+    }
     stack_head->tree = NULL;
     stack_head->next = NULL;
-    char buffer[20];
 
+    char buffer[20];
     while (fgets(buffer, sizeof(buffer), file)) {
         TreeNode *new_tree_node;
         if (buffer[0] == 'V' || buffer[0] == 'H') {
@@ -155,47 +122,11 @@ StackNode *createTree(char *filename) {
         } else {
             new_tree_node = createNode(buffer);
         }
-        pushToStack(&stack_head, new_tree_node);
+        if (new_tree_node != NULL) {
+            pushToStack(&stack_head, new_tree_node);
+        }
     }
 
     fclose(file);
     return stack_head;
-}
-
-void setCoordinates(TreeNode *tree_node) {
-    if (tree_node->left_child == NULL && tree_node->right_child == NULL) {
-        return;
-    }
-
-    tree_node->left_child->y_coord = tree_node->y_coord + 
-                                     ((tree_node->label == 'H' && !tree_node->id) ? tree_node->right_child->height : 0);
-    tree_node->right_child->x_coord = tree_node->x_coord + 
-                                      ((tree_node->label == 'V' && !tree_node->id) ? tree_node->left_child->width : 0);
-
-    tree_node->left_child->x_coord = tree_node->x_coord;
-    tree_node->right_child->y_coord = tree_node->y_coord;
-
-    setCoordinates(tree_node->left_child);
-    setCoordinates(tree_node->right_child);
-}
-
-void displayTree(TreeNode *tree_node, FILE *output_pr, FILE *output_dim, FILE *output_pck) {
-    if (tree_node == NULL) return;
-
-    if (tree_node->left_child == NULL && tree_node->right_child == NULL) {
-        fprintf(output_pr, "%d(%d,%d)\n", tree_node->id, tree_node->width, tree_node->height);
-    } else {
-        fprintf(output_pr, "%c\n", tree_node->label);
-    }
-
-    displayTree(tree_node->left_child, output_pr, output_dim, output_pck);
-    displayTree(tree_node->right_child, output_pr, output_dim, output_pck);
-
-    if ((tree_node->label == 'V' || tree_node->label == 'H') && tree_node->id == 0) {
-        fprintf(output_dim, "%c(%d,%d)\n", tree_node->label, tree_node->width, tree_node->height);
-    } else {
-        fprintf(output_dim, "%d(%d,%d)\n", tree_node->id, tree_node->width, tree_node->height);
-        fprintf(output_pck, "%d((%d,%d)(%d,%d))\n", tree_node->id, tree_node->width, tree_node->height,
-                tree_node->x_coord, tree_node->y_coord);
-    }
 }
