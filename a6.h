@@ -4,29 +4,31 @@
 #include <stdbool.h>
 #include <math.h>
 
+// Struct Definitions
 typedef struct TreeNode {
-    char label;
+    char nodeType;   // ASCII representation for V, H, etc.
     int id;
     int width;
     int height;
-    int x_coord;
-    int y_coord;
-    struct TreeNode *left_child;
-    struct TreeNode *right_child;
+    int posX;
+    int posY;
+    struct TreeNode *left;
+    struct TreeNode *right;
 } TreeNode;
 
-typedef struct StackNode {
-    struct TreeNode *tree;
-    struct StackNode *next;
-} StackNode;
+typedef struct NodeStack {
+    struct TreeNode *node;
+    struct NodeStack *next;
+} NodeStack;
 
-StackNode *createTree(char *filename);
-void freeStack(StackNode *stack_head);
-void displayTree(TreeNode *root, FILE *output_pr, FILE *output_dim, FILE *output_pck);
-void setCoordinates(TreeNode *root);
-StackNode *createTree(char *filename);
-TreeNode *assembleNode(StackNode **stack_head, char *buffer);
-void freeTree(TreeNode *root);
-void pushToStack(StackNode **stack_head, TreeNode *new_tree_node);
-TreeNode *createNode(char *buffer);
-TreeNode *popStack(StackNode **stack_head);
+// Function Prototypes
+NodeStack* createTree(const char *filename);
+void releaseStack(NodeStack *stackHead);
+void outputNodeData(TreeNode *root, FILE *outputFile, FILE *dimensionsFile, FILE *packFile);
+void calculateCoordinates(TreeNode *root);
+NodeStack* createTree(const char *filename);
+TreeNode* createSubtree(NodeStack **stackHead, const char *buffer);
+void releaseTree(TreeNode *root);
+void pushToStack(NodeStack **stackHead, TreeNode *newNode);
+TreeNode* createNode(const char *buffer);
+TreeNode* popFromStack(NodeStack **stackHead);
