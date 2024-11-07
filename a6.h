@@ -4,31 +4,16 @@
 #include <stdbool.h>
 #include <math.h>
 
-// Struct Definitions
-typedef struct Node {
-    char node_name;
-    int int_name;
-    int width;
-    int height;
-    int x_co;
-    int y_co;
-    struct Node *leftNode;
-    struct Node *rightNode;
-} Node;
+typedef struct TreeNode {
+    char type;
+    int width, height;
+    int x, y;
+    int label; 
+    struct TreeNode *left, *right;
+} TreeNode;
 
-typedef struct Stack {
-    struct Node *node;
-    struct Stack *next;
-} Stack;
-
-// Function Prototypes with Renamed Functions
-
-void printNode(Node *root, FILE *out1, FILE *out2, FILE *out3);
-Stack* buildTree(const char *filename);
-void deleteStack(Stack *stack_head);
-Node* popStack(Stack **stack_head);
-void findXY(Node *root);
-Node* createNode(const char *buffer);
-void deleteTree(Node *root);
-Node* buildSmall(Stack **stack_head, const char *buffer);
-void pushStack(Stack **stack_head, Node *new_node);
+TreeNode* buildTree(FILE *inputFile);
+void preorderTraversal(TreeNode *node, FILE *out);
+void findDirection(TreeNode *node, FILE *out);
+void findXY(TreeNode *node, int x, int y, FILE *out);
+void deleteTree(TreeNode *node);
