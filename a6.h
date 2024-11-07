@@ -10,10 +10,10 @@ typedef struct Node {
     int int_name;
     int width;
     int height;
-    int org_x;
-    int org_y;
-    struct Node *left;
-    struct Node *right;
+    int x_co;
+    int y_co;
+    struct Node *leftNode;
+    struct Node *rightNode;
 } Node;
 
 typedef struct Stack {
@@ -22,12 +22,13 @@ typedef struct Stack {
 } Stack;
 
 // Function Prototypes with Renamed Functions
-Stack* constructTree(const char *filename);
-void disposeStack(Stack *stack_head);
-void displayNode(Node *root, FILE *outFile, FILE *dimFile, FILE *packFile);
-void calculateBoxCoords(Node *root);
-Node* createNodeElement(const char *buffer);
-Node* removeFromStack(Stack **stack_head);
-void pushToStack(Stack **stack_head, Node *new_node);
-void disposeTree(Node *root);
-Node* buildSubtree(Stack **stack_head, const char *buffer);
+
+void printNode(Node *root, FILE *out1, FILE *out2, FILE *out3);
+Stack* buildTree(const char *filename);
+void deleteStack(Stack *stack_head);
+Node* popStack(Stack **stack_head);
+void findXY(Node *root);
+Node* createNode(const char *buffer);
+void deleteTree(Node *root);
+Node* buildSmall(Stack **stack_head, const char *buffer);
+void pushStack(Stack **stack_head, Node *new_node);
